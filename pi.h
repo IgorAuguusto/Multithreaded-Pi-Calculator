@@ -6,6 +6,8 @@
 #define TRUE 1
 #define FALSE 0
 
+#define PROCESS_ONE 0
+#define PROCESS_TWO 1
 
 #define NUMBER_OF_PROCESS 2
 
@@ -119,8 +121,4 @@ pid_t createProcess();
 
 void process();
 
-void shwoReport(Report report);
-
-void shwoProcessReport(ProcessReport processReport);
-
-void processChild(short numberProcess, ProcessReport* processReport);
+void processChild(int numberProcess, int pipe_fd[2], Report* report);

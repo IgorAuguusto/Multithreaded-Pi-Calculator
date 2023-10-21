@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 
+#include <fcntl.h>
 #include <string.h>
 #include <syscall.h>
 #include <time.h>
@@ -10,8 +11,34 @@
 /* Cria o relatório do programa escrevendo na tela as informações da estrutura Report.
  * Retorna TRUE se o relatório foi escrito com sucesso ou FALSE se os dados da estrutura Report são vazios ou nulos.
 */
-int createReport(const Report *report){
-    return 0;
+int createReport(const Report *report) {
+    if (report == NULL) {
+        return FALSE;
+    }
+
+    if (report->processReport1.identification[0] == '\0' || report->processReport2.identification[0] == '\0') {
+        return FALSE;
+    }
+
+    printf("\n\n%s\n", report->programName);
+    printf("\n%s\n", report->message1);
+    printf("%s\n", report->message2);
+
+    printf("\n%s\n\n", report->processReport1.identification);
+    printf("\t%s\n\n", report->processReport1.numberOfThreads);
+    printf("\t%s", report->processReport1.start);
+    printf("\t%s", report->processReport1.end);
+    printf("\t%s", report->processReport1.duration);
+    printf("\n\t%s\n", report->processReport1.pi);
+
+    printf("\n%s\n\n", report->processReport2.identification);
+    printf("\t%s\n\n", report->processReport2.numberOfThreads);
+    printf("\t%s", report->processReport2.start);
+    printf("\t%s", report->processReport2.end);
+    printf("\t%s", report->processReport2.duration);
+    printf("\n\t%s\n", report->processReport2.pi);
+
+    return TRUE;
 }//createReport();
 
 /* Cria o arquivo texto no diretório atual usando o nome do arquivo, a descrição e os dados do vetor do tipo Threads.
@@ -27,14 +54,14 @@ int createFile(const FileName fileName, String description, const Threads *threa
    Retorna a identificação da thread.
 */
 pthread_t createThread(unsigned int *terms) {
-	pthread_t threadID; // Identificação da thread.
-	// Cria a thread filha para executar a função adicao.
-    ThreadArgs *threadArgs = (ThreadArgs *) malloc (sizeof(threadArgs));
-    threadArgs->termValue = *terms * PARTIAL_NUMBER_OF_TERMS;
-    printf("\n\nTERMS CREATE UAU = %d", threadArgs->termValue);
+    pthread_t threadID; // Identificação da thread.
+    // Cria a thread filha para executar a função sumPartial.
+    ThreadArgs *threadArgs = (ThreadArgs *)malloc(sizeof(ThreadArgs));
+    threadArgs->termValue = *terms * PARTIAL_NUMBER_OF_TERMS; 
+    printf("\nTERMS: %d\n", threadArgs->termValue);
     pthread_create(&threadID, NULL, sumPartial, threadArgs);
     free(threadArgs);
-	return threadID;
+    return threadID;
 }
 
 /* Realiza a soma parcial de n (n é definido por PARTIAL_NUMBER_OF_TERMS) termos da série de Leibniz
@@ -54,7 +81,6 @@ void* sumPartial(void *terms) {
     *sum = 0.0;
     ThreadArgs *threadArgs = (ThreadArgs *)terms;
     int current = threadArgs->termValue;
-    printf("\n\n%d CURRENT", threadArgs->termValue);
     for (unsigned int i = current; i < current + PARTIAL_NUMBER_OF_TERMS; i++) {
         double term = 1.0 / (2.0 * i + 1);
         if (i % 2 == 0) {
@@ -83,19 +109,19 @@ double calculationOfNumberPi(unsigned int terms){
         pi += *(double *) result; 
         free(result);
     }
-    printf("\n\n%lf\n",pi);
     return pi;
 }//calculationOfNumberPi();
 
 
-void processChild(short numberProcess, ProcessReport* processReport) {
+void processChild(int numberProcess, int pipe_fd[2], Report* report) {
+    ProcessReport processReport;
     time_t startTime;
     time(&startTime);
 
-    snprintf(processReport->identification, sizeof(processReport->identification),
+    snprintf(processReport.identification, STRING_DEFAULT_SIZE,
              "- Processo Filho: pi%d (PID %d)", numberProcess + 1, getpid());
 
-    sprintf(processReport->numberOfThreads, "No de threads: 16");
+    sprintf(processReport.numberOfThreads, "No de threads: 16");
     
     double pi = calculationOfNumberPi(PARTIAL_NUMBER_OF_TERMS);
 
@@ -112,14 +138,66 @@ void processChild(short numberProcess, ProcessReport* processReport) {
     strftime(startTimeStr, sizeof(startTimeStr), "%H:%M:%S", startTm);
     strftime(endTimeStr, sizeof(endTimeStr), "%H:%M:%S", endTm);
     
-    snprintf(processReport->start, sizeof(processReport->start), "Início: %s\n", startTimeStr);
-    snprintf(processReport->end, sizeof(processReport->end), "Fim: %s\n", endTimeStr);
-    snprintf(processReport->duration, sizeof(processReport->duration), "Duração: %.2lf s\n", duration);
-    snprintf(processReport->pi, STRING_DEFAULT_SIZE, "Pi = %.9f", pi);
-    shwoProcessReport(*processReport);
-    exit(EXIT_SUCCESS);
+    snprintf(processReport.start, STRING_DEFAULT_SIZE, "Início: %s\n", startTimeStr);
+    snprintf(processReport.end, STRING_DEFAULT_SIZE, "Fim: %s\n", endTimeStr);
+    snprintf(processReport.duration, STRING_DEFAULT_SIZE, "Duração: %.2lf s\n", duration);
+    snprintf(processReport.pi, STRING_DEFAULT_SIZE, "Pi = %.9f", pi);
+
+    if (numberProcess == PROCESS_ONE) {
+        // Processo filho 1 (pi1)
+        close(pipe_fd[0]); 
+        write(pipe_fd[1], &processReport, sizeof(ProcessReport));
+        close(pipe_fd[1]);
+        exit(EXIT_SUCCESS);
+
+    } else if (numberProcess == PROCESS_TWO) {
+        // Processo filho 2 (pi2)
+        close(pipe_fd[1]); 
+        read(pipe_fd[0], &report->processReport1, sizeof(ProcessReport));
+        close(pipe_fd[0]);
+        report->processReport2 = processReport;
+        createReport(report);
+        exit(EXIT_SUCCESS);
+    }
 }
 
+
+
+
+void process() {
+    Report report;
+
+    snprintf(report.programName, STRING_DEFAULT_SIZE, "Cálculo do Número π");
+    snprintf(report.message1, STRING_DEFAULT_SIZE, "Criando os processos filhos pi1 e pi2...");
+    snprintf(report.message2, STRING_DEFAULT_SIZE,"Processo pai (PID %d) finalizou sua execução.", getpid());
+
+    int pipe_fd[2]; 
+
+    if (pipe(pipe_fd) == -1) {
+        perror("Erro ao criar o pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    pid_t process1 = createProcess();
+    pid_t process2 = createProcess();
+
+    if (process1 == 0 && process2 != 0) {
+        // Processo filho 1
+        close(pipe_fd[0]); // Fecha o descritor de leitura
+        processChild(PROCESS_ONE, pipe_fd, &report); // Passe a estrutura Report como ponteiro
+    }
+    if (process2 == 0 && process1 != 0) {
+        // Processo filho 2
+        close(pipe_fd[1]); // Fecha o descritor de escrita
+        processChild(PROCESS_TWO, pipe_fd, &report); // Passe a estrutura Report como ponteiro
+    }
+    else if (process1 != 0 && process2 != 0) {
+        close(pipe_fd[0]);
+        close(pipe_fd[1]);
+
+        exit(EXIT_SUCCESS);
+    }
+}
 
 /*
  * Esta função inicia o programa.
@@ -130,15 +208,7 @@ int pi(){
     return  EXIT_SUCCESS;
 };
 
-void shwoReport(Report report){
-     printf("%s\n%s\n%s\n", report.programName, report.message1, report.message2);
-};
 
-void shwoProcessReport(ProcessReport processReport){
-    printf("\n\n %s\n\n%s\n\n%s%s%s\n%s\n",
-           processReport.identification, processReport.numberOfThreads,
-           processReport.start, processReport.end, processReport.duration, processReport.pi);
-};
 
 pid_t createProcess() {
     // Cria o processo filho.
@@ -151,28 +221,6 @@ pid_t createProcess() {
 	}
 	return pid;
 }
-
-void process() {
-	Report report;
-    snprintf(report.programName, STRING_DEFAULT_SIZE, "Cálculo do Número π");
-    snprintf(report.message1, STRING_DEFAULT_SIZE, "Criando os processos filhos pi1 e pi2...");
-
-    pid_t process1 = createProcess();
-    pid_t process2 = createProcess();
-    
-    if (process1 == 0 && process2 != 0) {
-        processChild(0, &report.processReport1);
-    }
-    if (process2 == 0 && process1 != 0) {
-        processChild(1, &report.processReport2);
-
-    }
-    else if (process1 != 0 && process2 != 0) {
-        snprintf(report.message2, STRING_DEFAULT_SIZE, "Processo pai (PID %d) finalizou sua execução.", getpid());
-        shwoReport(report);
-        exit(EXIT_FAILURE);
-    }  
-} 
 
 
 
