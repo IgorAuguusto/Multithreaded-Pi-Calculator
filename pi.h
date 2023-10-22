@@ -67,8 +67,9 @@ typedef struct  {
 } Thread;
 
 typedef struct {
-   unsigned int termValue;
-} ThreadArgs;
+   Thread thread;
+   double sumPartional;
+} ThreadResult;
 
 // Relação de threads do processo filho.
 typedef Thread Threads[NUMBER_OF_THREADS]; 

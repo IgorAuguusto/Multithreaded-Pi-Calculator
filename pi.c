@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <string.h>
 #include <syscall.h>
-#include <time.h>
 #include <sys/wait.h>
+#include <sys/time.h>
 #include "pi.h"
 
 /* Cria o relatório do programa escrevendo na tela as informações da estrutura Report.
@@ -45,7 +45,33 @@ int createReport(const Report *report) {
  * Retorna TRUE se o arquivo foi criado com sucesso ou FALSE se ocorreu algum erro.
  */
 int createFile(const FileName fileName, String description, const Threads *threads){
-    return 0;
+    
+    FILE *arquivo;
+
+    // Abra o arquivo para escrita (se não existir, ele será criado; se existir, o conteúdo será substituído)
+    arquivo = fopen(fileName, "w");
+
+    // Verifique se o arquivo foi aberto com sucesso
+    if (arquivo == NULL) {
+        printf("Não foi possível abrir o arquivo.\n");
+        return FALSE;
+    }
+
+    // Escreva no arquivo
+    fprintf(arquivo, "Arquivo: %s\n", fileName);
+    fprintf(arquivo, "Descrição: %s\n\n", description);
+
+    double totalTimeOfThreads = 0.0;
+    for (int i = 0; i < NUMBER_OF_THREADS; i++){
+        fprintf(arquivo,"TID %d: %.2f\n", threads[0][i].tid, threads[0][i].time);
+        totalTimeOfThreads += threads[0][i].time;
+    }
+
+    fprintf(arquivo, "\nTotal: %.2f\n", totalTimeOfThreads);
+    // Feche o arquivo
+    fclose(arquivo);
+
+    return TRUE;
 }//createFile();
 
 /* Calcula o número pi com n (n é definido por DECIMAL_PLACES) casas decimais usando o número máximo de
@@ -53,8 +79,9 @@ int createFile(const FileName fileName, String description, const Threads *threa
    usando a função createThread, onde x é igual a NUMBER_OF_THREADS. 
 */
 double calculationOfNumberPi(unsigned int terms){
-   Threads threads;
+    Threads threads;
     void *result;
+    ThreadResult threadResult;
     double pi = 0.0;
 
     for (unsigned int sequenceNumber = 0; sequenceNumber < NUMBER_OF_THREADS; sequenceNumber++) {
@@ -62,9 +89,18 @@ double calculationOfNumberPi(unsigned int terms){
     }
     for (unsigned int i = 0; i < NUMBER_OF_THREADS; i++) {
         pthread_join(threads[i].threadID, &result);
-        pi += *(double *) result; 
+        threadResult = *(ThreadResult*)result;
+        pi += threadResult.sumPartional;
+        threads[i].tid = threadResult.thread.tid;
+        threads[i].time = threadResult.thread.time;
         free(result);
     }
+    
+    String fileName;
+    terms == PROCESS_ONE ? strcpy(fileName, "pi1.txt") :  strcpy(fileName, "pi2.txt");
+    String description;
+    terms == PROCESS_ONE ? strcpy(description, "Tempo em segundos das 16 threads do processo filho pi1") : strcpy(description, "Tempo em segundos das 16 threads do processo filho pi2"); 
+    createFile(fileName, description, &threads);
     return pi * 4;
 }//calculationOfNumberPi();
 
@@ -95,50 +131,66 @@ pthread_t createThread(unsigned int *terms) {
    por esta função para o processo que criou a thread.
 */
 void* sumPartial(void *terms) {    
-    double* sum = (double*)malloc(sizeof(double));
-    *sum = 0.0;
+    struct timeval startTime, endTime;
+    gettimeofday(&startTime, NULL);
+
+    ThreadResult* threadResult = (ThreadResult*)malloc(sizeof(ThreadResult));
+    threadResult->sumPartional = 0.0;
     unsigned int *current = (unsigned int *)terms;
     for (unsigned int i = *current; i < *current + PARTIAL_NUMBER_OF_TERMS; i++) {
         double term = 1.0 / (2.0 * i + 1);
         if (i % 2 == 0) {
-            *sum += term;
+            threadResult->sumPartional += term;
         } else {
-            *sum -= term;
+            threadResult->sumPartional -= term;
         }
     }
+    
+    gettimeofday(&endTime, NULL);
+    time_t startTimeSeconds = startTime.tv_sec;
+    time_t endTimeSeconds = endTime.tv_sec;
+    double seconds = (double)(endTime.tv_sec - startTime.tv_sec);
+    double milliseconds = (double)(endTime.tv_usec - startTime.tv_usec) / 1000.0;
+    threadResult->thread.tid = syscall(SYS_gettid); 
+    threadResult->thread.time = seconds + (milliseconds / 1000.0);
+    
     // Liberando a região de memoria do sequenceNumber que vem como argumento.
     free(terms);
-    pthread_exit(sum);
+    pthread_exit(threadResult);
 }
 
 void processChild(int numberProcess, int pipe_fd[2], Report* report) {
     ProcessReport processReport;
-    time_t startTime;
-    time(&startTime);
+    struct timeval startTime, endTime;
+    gettimeofday(&startTime, NULL);
 
     snprintf(processReport.identification, STRING_DEFAULT_SIZE,
              "- Processo Filho: pi%d (PID %d)", numberProcess + 1, getpid());
 
     sprintf(processReport.numberOfThreads, "No de threads: 16");
     
-    double pi = calculationOfNumberPi(PARTIAL_NUMBER_OF_TERMS);
+    double pi = calculationOfNumberPi(numberProcess);
 
-    time_t endTime;
-    time(&endTime);
+    gettimeofday(&endTime, NULL);
 
-    double duration = difftime(endTime, startTime);
+    double seconds = (double)(endTime.tv_sec - startTime.tv_sec);
+    double milliseconds = (double)(endTime.tv_usec - startTime.tv_usec) / 1000.0;
+
 
     char startTimeStr[9];
     char endTimeStr[9];
-    struct tm* startTm = localtime(&startTime);
-    struct tm* endTm = localtime(&endTime);
-    
-    strftime(startTimeStr, sizeof(startTimeStr), "%H:%M:%S", startTm);
-    strftime(endTimeStr, sizeof(endTimeStr), "%H:%M:%S", endTm);
-    
+    struct tm startTm, endTm;
+    time_t startTimeSeconds = startTime.tv_sec;
+    time_t endTimeSeconds = endTime.tv_sec;
+    gmtime_r(&startTimeSeconds, &startTm);
+    gmtime_r(&endTimeSeconds, &endTm);
+
+    strftime(startTimeStr,STRING_DEFAULT_SIZE, "%H:%M:%S", &startTm);
+    strftime(endTimeStr, STRING_DEFAULT_SIZE, "%H:%M:%S", &endTm);
+
     snprintf(processReport.start, STRING_DEFAULT_SIZE, "Início: %s\n", startTimeStr);
     snprintf(processReport.end, STRING_DEFAULT_SIZE, "Fim: %s\n", endTimeStr);
-    snprintf(processReport.duration, STRING_DEFAULT_SIZE, "Duração: %.2lf s\n", duration);
+    snprintf(processReport.duration, STRING_DEFAULT_SIZE, "Duração: %.2f s\n", seconds + (milliseconds / 1000.0));
     snprintf(processReport.pi, STRING_DEFAULT_SIZE, "Pi = %.9f", pi);
 
     if (numberProcess == PROCESS_ONE) {
