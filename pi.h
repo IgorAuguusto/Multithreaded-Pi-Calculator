@@ -6,6 +6,7 @@
 #define TRUE 1
 #define FALSE 0
 
+// Identificadores de processos 
 #define PROCESS_ONE 0
 #define PROCESS_TWO 1
 

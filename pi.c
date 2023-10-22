@@ -36,7 +36,7 @@ int createReport(const Report *report) {
     printf("\t%s", report->processReport2.start);
     printf("\t%s", report->processReport2.end);
     printf("\t%s", report->processReport2.duration);
-    printf("\n\t%s\n", report->processReport2.pi);
+    printf("\n\t%s\n\n", report->processReport2.pi);
 
     return TRUE;
 }//createReport();
@@ -48,21 +48,39 @@ int createFile(const FileName fileName, String description, const Threads *threa
     return 0;
 }//createFile();
 
+/* Calcula o número pi com n (n é definido por DECIMAL_PLACES) casas decimais usando o número máximo de
+   termos da série de Leibniz, que é definido por MAXIMUM_NUMBER_OF_TERMS. Esta função deve criar x threads
+   usando a função createThread, onde x é igual a NUMBER_OF_THREADS. 
+*/
+double calculationOfNumberPi(unsigned int terms){
+   Threads threads;
+    void *result;
+    double pi = 0.0;
+
+    for (unsigned int sequenceNumber = 0; sequenceNumber < NUMBER_OF_THREADS; sequenceNumber++) {
+        threads[sequenceNumber].threadID = createThread(&sequenceNumber);
+    }
+    for (unsigned int i = 0; i < NUMBER_OF_THREADS; i++) {
+        pthread_join(threads[i].threadID, &result);
+        pi += *(double *) result; 
+        free(result);
+    }
+    return pi * 4;
+}//calculationOfNumberPi();
+
 /* Cria uma thread para fazer a soma parcial de n termos da série de Leibniz. 
    Esta função deve usar a função sumPartial para definir qual a função a ser executada por cada uma das x threads 
    do programa, onde x é igual a NUMBER_OF_THREADS. 
    Retorna a identificação da thread.
 */
 pthread_t createThread(unsigned int *terms) {
-    pthread_t threadID; // Identificação da thread.
-    // Cria a thread filha para executar a função sumPartial.
-    ThreadArgs *threadArgs = (ThreadArgs *)malloc(sizeof(ThreadArgs));
-    threadArgs->termValue = *terms * PARTIAL_NUMBER_OF_TERMS; 
-    printf("\nTERMS: %d\n", threadArgs->termValue);
-    pthread_create(&threadID, NULL, sumPartial, threadArgs);
-    free(threadArgs);
+    pthread_t threadID; 
+    unsigned int* sequenceNumber = (unsigned int *) malloc (sizeof(unsigned int));
+    *sequenceNumber = (*terms) * PARTIAL_NUMBER_OF_TERMS;
+    pthread_create(&threadID, NULL, sumPartial, sequenceNumber);
     return threadID;
 }
+
 
 /* Realiza a soma parcial de n (n é definido por PARTIAL_NUMBER_OF_TERMS) termos da série de Leibniz
    começando em x, por exemplo, como PARTIAL_NUMBER_OF_TERMS é 125.000.000, então se x é:
@@ -76,12 +94,11 @@ pthread_t createThread(unsigned int *terms) {
    O resultado dessa soma parcial deve ser um valor do tipo double a ser retornado 
    por esta função para o processo que criou a thread.
 */
-void* sumPartial(void *terms) {
+void* sumPartial(void *terms) {    
     double* sum = (double*)malloc(sizeof(double));
     *sum = 0.0;
-    ThreadArgs *threadArgs = (ThreadArgs *)terms;
-    int current = threadArgs->termValue;
-    for (unsigned int i = current; i < current + PARTIAL_NUMBER_OF_TERMS; i++) {
+    unsigned int *current = (unsigned int *)terms;
+    for (unsigned int i = *current; i < *current + PARTIAL_NUMBER_OF_TERMS; i++) {
         double term = 1.0 / (2.0 * i + 1);
         if (i % 2 == 0) {
             *sum += term;
@@ -89,29 +106,10 @@ void* sumPartial(void *terms) {
             *sum -= term;
         }
     }
+    // Liberando a região de memoria do sequenceNumber que vem como argumento.
+    free(terms);
     pthread_exit(sum);
 }
-
-/* Calcula o número pi com n (n é definido por DECIMAL_PLACES) casas decimais usando o número máximo de
-   termos da série de Leibniz, que é definido por MAXIMUM_NUMBER_OF_TERMS. Esta função deve criar x threads
-   usando a função createThread, onde x é igual a NUMBER_OF_THREADS. 
-*/
-double calculationOfNumberPi(unsigned int terms){
-    pthread_t threads[NUMBER_OF_THREADS];
-    void *result;
-    double pi = 0.0;
-
-    for (unsigned int i = 0; i < NUMBER_OF_THREADS; i++) {
-        threads[i] = createThread(&i);
-    }
-    for (unsigned int i = 0; i < NUMBER_OF_THREADS; i++) {
-        pthread_join(threads[i], &result);
-        pi += *(double *) result; 
-        free(result);
-    }
-    return pi;
-}//calculationOfNumberPi();
-
 
 void processChild(int numberProcess, int pipe_fd[2], Report* report) {
     ProcessReport processReport;
@@ -182,14 +180,12 @@ void process() {
     pid_t process2 = createProcess();
 
     if (process1 == 0 && process2 != 0) {
-        // Processo filho 1
-        close(pipe_fd[0]); // Fecha o descritor de leitura
-        processChild(PROCESS_ONE, pipe_fd, &report); // Passe a estrutura Report como ponteiro
+        close(pipe_fd[0]); 
+        processChild(PROCESS_ONE, pipe_fd, &report); 
     }
     if (process2 == 0 && process1 != 0) {
-        // Processo filho 2
-        close(pipe_fd[1]); // Fecha o descritor de escrita
-        processChild(PROCESS_TWO, pipe_fd, &report); // Passe a estrutura Report como ponteiro
+        close(pipe_fd[1]); 
+        processChild(PROCESS_TWO, pipe_fd, &report); 
     }
     else if (process1 != 0 && process2 != 0) {
         close(pipe_fd[0]);
@@ -216,7 +212,7 @@ pid_t createProcess() {
 			
 	// Verifica se ocorreu um erro na criação do processo filho.
 	if (pid < 0) {
-		printf("\nERRO: o processo filho não foi criado.\n\n");
+		perror("\nERRO: o processo filho não foi criado.\n\n");
 		exit(EXIT_FAILURE);
 	}
 	return pid;
