@@ -48,16 +48,13 @@ int createFile(const FileName fileName, String description, const Threads *threa
     
     FILE *arquivo;
 
-    // Abra o arquivo para escrita (se não existir, ele será criado; se existir, o conteúdo será substituído)
     arquivo = fopen(fileName, "w");
 
-    // Verifique se o arquivo foi aberto com sucesso
     if (arquivo == NULL) {
         printf("Não foi possível abrir o arquivo.\n");
         return FALSE;
     }
 
-    // Escreva no arquivo
     fprintf(arquivo, "Arquivo: %s\n", fileName);
     fprintf(arquivo, "Descrição: %s\n\n", description);
 
@@ -66,9 +63,7 @@ int createFile(const FileName fileName, String description, const Threads *threa
         fprintf(arquivo,"TID %d: %.2f\n", threads[0][i].tid, threads[0][i].time);
         totalTimeOfThreads += threads[0][i].time;
     }
-
-    fprintf(arquivo, "\nTotal: %.2f\n", totalTimeOfThreads);
-    // Feche o arquivo
+    fprintf(arquivo, "\nTotal: %.2f\n", totalTimeOfThreads);    
     fclose(arquivo);
 
     return TRUE;
@@ -154,7 +149,7 @@ void* sumPartial(void *terms) {
     threadResult->thread.tid = syscall(SYS_gettid); 
     threadResult->thread.time = seconds + (milliseconds / 1000.0);
     
-    // Liberando a região de memoria do sequenceNumber que vem como argumento.
+    // Liberando a região de memoria do argumento.
     free(terms);
     pthread_exit(threadResult);
 }
@@ -167,7 +162,7 @@ void processChild(int numberProcess, int pipe_fd[2], Report* report) {
     snprintf(processReport.identification, STRING_DEFAULT_SIZE,
              "- Processo Filho: pi%d (PID %d)", numberProcess + 1, getpid());
 
-    sprintf(processReport.numberOfThreads, "No de threads: 16");
+    sprintf(processReport.numberOfThreads, "No de threads: %d", NUMBER_OF_THREADS);
     
     double pi = calculationOfNumberPi(numberProcess);
 
@@ -195,16 +190,16 @@ void processChild(int numberProcess, int pipe_fd[2], Report* report) {
 
     if (numberProcess == PROCESS_ONE) {
         // Processo filho 1 (pi1)
-        close(pipe_fd[0]); 
-        write(pipe_fd[1], &processReport, sizeof(ProcessReport));
-        close(pipe_fd[1]);
+        close(pipe_fd[PIPE_READ]); 
+        write(pipe_fd[PIPE_WRITER], &processReport, sizeof(ProcessReport));
+        close(pipe_fd[PIPE_WRITER]);
         exit(EXIT_SUCCESS);
 
     } else if (numberProcess == PROCESS_TWO) {
         // Processo filho 2 (pi2)
-        close(pipe_fd[1]); 
-        read(pipe_fd[0], &report->processReport1, sizeof(ProcessReport));
-        close(pipe_fd[0]);
+        close(pipe_fd[PIPE_WRITER]); 
+        read(pipe_fd[PIPE_READ], &report->processReport1, sizeof(ProcessReport));
+        close(pipe_fd[PIPE_READ]);
         report->processReport2 = processReport;
         createReport(report);
         exit(EXIT_SUCCESS);
@@ -240,9 +235,8 @@ void process() {
         processChild(PROCESS_TWO, pipe_fd, &report); 
     }
     else if (process1 != 0 && process2 != 0) {
-        close(pipe_fd[0]);
-        close(pipe_fd[1]);
-
+        close(pipe_fd[PIPE_READ]);
+        close(pipe_fd[PIPE_WRITER]);
         exit(EXIT_SUCCESS);
     }
 }

@@ -1,0 +1,21 @@
+Arquivo: pi1.txt
+Descrição: Tempo em segundos das 16 threads do processo filho pi1
+
+TID 31266: 2.12
+TID 31269: 2.17
+TID 31270: 2.00
+TID 31271: 1.75
+TID 31272: 1.93
+TID 31274: 1.80
+TID 31275: 2.18
+TID 31276: 2.17
+TID 31277: 1.97
+TID 31278: 2.16
+TID 31279: 2.19
+TID 31280: 2.10
+TID 31281: 1.84
+TID 31282: 2.06
+TID 31283: 2.18
+TID 31284: 1.68
+
+Total: 32.29

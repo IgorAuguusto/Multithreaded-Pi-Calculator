@@ -6,9 +6,13 @@
 #define TRUE 1
 #define FALSE 0
 
+// Acesso pipe
+#define PIPE_READ 0
+#define PIPE_WRITER 1
+
 // Identificadores de processos 
-#define PROCESS_ONE 0
-#define PROCESS_TWO 1
+#define PROCESS_ONE 1
+#define PROCESS_TWO 2
 
 #define NUMBER_OF_PROCESS 2
 
