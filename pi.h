@@ -14,6 +14,7 @@
 #define PROCESS_ONE 1
 #define PROCESS_TWO 2
 
+// Número de processos
 #define NUMBER_OF_PROCESS 2
 
 // Tamanho do nome do arquivo.
@@ -44,7 +45,7 @@
 
 // Constantes definidas para preencher a estrutura PocessReport dos processos filhos. 
 #define PROCESS_REPORT_IDENTIFICATION  "- Processo Filho: pi%d (PID %d)"
-#define PROCESS_REPORT_NUMBER_OF_THREADS "No de threads: %d"
+#define PROCESS_REPORT_NUMBER_OF_THREADS "Nº de threads: %d"
 #define PROCESS_REPORT_START "Início: %s" 
 #define PROCESS_REPORT_END "Fim: %s"
 #define PROCESS_REPORT_DURATION "Duração: %.2f s"
@@ -153,7 +154,7 @@ double calculationOfNumberPi(unsigned int terms);
 int pi();
 
 /* A função 'process' é responsável por coordenar a execução de múltiplos processos e a criação de um pipe para comunicação entre eles.
-   Ela segue a lógica de criação de dois processos filho, onde cada filho executa uma função específica, enquanto o processo pai coordena a execução.
+   Ela segue a lógica de criação de dois processos filho.
 
    - Cria uma estrutura 'Report' para armazenar informações.
    - Chama 'fillReportProcessFather' para preencher a estrutura 'Report'.
@@ -162,8 +163,6 @@ int pi();
    - No primeiro filho, fecha o descritor de leitura do pipe e executa 'processChild' com a identificação 'PROCESS_ONE' e a estrutura 'Report'.
    - No segundo filho, fecha o descritor de escrita do pipe e executa 'processChild' com a identificação 'PROCESS_TWO' e a estrutura 'Report'.
    - No processo pai, fecha ambos os descritores do pipe e sai com EXIT_SUCCESS.
-
-   Essa função é parte de um programa que envolve múltiplos processos e comunicação entre eles.
 */
 void process();
 
@@ -223,8 +222,6 @@ void processChild(int numberProcess, int pipe_fd[2], Report* report);
    - endTimeStr: String formatada representando o tempo de término.
    - duration: Tempo de execução em segundos.
    - pi: Valor de π.
-
-   Essa função é parte do processo de criação de relatórios para monitorar o desempenho do programa.
 */
 void fillProcessReportSun(ProcessReport* processReport, int numberProcess, char* startTimeStr, char* endTimeStr, double duration, double pi);
 

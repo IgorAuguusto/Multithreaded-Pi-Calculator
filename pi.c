@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 
-#include <fcntl.h>
 #include <string.h>
 #include <syscall.h>
 #include <sys/wait.h>
+#include <locale.h>
 #include <sys/time.h>
 #include "pi.h"
 
@@ -161,7 +161,7 @@ double calculationOfNumberPi(unsigned int terms){
         free(result);
     }
     
-    String fileName;
+    FileName fileName;
     snprintf(fileName, STRING_DEFAULT_SIZE, FILE_NAME_PROCESS, terms);
     String description;
     snprintf(description, STRING_DEFAULT_SIZE, FILE_DESCRIPTION, terms); 
@@ -179,8 +179,6 @@ double calculationOfNumberPi(unsigned int terms){
    - endTimeStr: String formatada representando o tempo de término.
    - duration: Tempo de execução em segundos.
    - pi: Valor de π.
-
-   Essa função é parte do processo de criação de relatórios para monitorar o desempenho do programa.
 */
 void fillProcessReportSun(ProcessReport* processReport, int numberProcess, char* startTimeStr, char* endTimeStr, double duration, double pi){
     snprintf(processReport->identification, STRING_DEFAULT_SIZE, PROCESS_REPORT_IDENTIFICATION, numberProcess, getpid());
@@ -280,6 +278,7 @@ int createPipe(int pipe_fd[2]) {
         perror(ERROR_PIPE);
         exit(EXIT_FAILURE);
     }
+    return TRUE;
 }//createPipe()
 
 /* A função 'fillReportProcessFather' é responsável por preencher a estrutura 'Report' com informações específicas,
@@ -297,7 +296,7 @@ void fillReportProcessFather(Report* report){
 }//fillReportProcessFather()
 
 /* A função 'process' é responsável por coordenar a execução de múltiplos processos e a criação de um pipe para comunicação entre eles.
-   Ela segue a lógica de criação de dois processos filho, onde cada filho executa uma função específica, enquanto o processo pai coordena a execução.
+   Ela segue a lógica de criação de dois processos filho.
 
    - Cria uma estrutura 'Report' para armazenar informações.
    - Chama 'fillReportProcessFather' para preencher a estrutura 'Report'.
@@ -306,8 +305,6 @@ void fillReportProcessFather(Report* report){
    - No primeiro filho, fecha o descritor de leitura do pipe e executa 'processChild' com a identificação 'PROCESS_ONE' e a estrutura 'Report'.
    - No segundo filho, fecha o descritor de escrita do pipe e executa 'processChild' com a identificação 'PROCESS_TWO' e a estrutura 'Report'.
    - No processo pai, fecha ambos os descritores do pipe e sai com EXIT_SUCCESS.
-
-   Essa função é parte de um programa que envolve múltiplos processos e comunicação entre eles.
 */
 void process() {
     Report report;
@@ -340,6 +337,7 @@ void process() {
  * Retorna EXIT_SUCCESS.
  */
 int pi(){
+    setlocale(LC_ALL, "pt_BR.utf8");
     process();
     return  EXIT_SUCCESS;
 }//pi()
