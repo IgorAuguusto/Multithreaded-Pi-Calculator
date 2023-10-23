@@ -44,7 +44,7 @@ int createReport(const Report *report) {
 /* Cria o arquivo texto no diretório atual usando o nome do arquivo, a descrição e os dados do vetor do tipo Threads.
  * Retorna TRUE se o arquivo foi criado com sucesso ou FALSE se ocorreu algum erro.
  */
-int createFile(const FileName fileName, String description, const Threads *threads){
+int createFile(const FileName fileName, String description, const Threads threads){
     
     FILE *arquivo;
     arquivo = fopen(fileName, "w");
@@ -59,8 +59,8 @@ int createFile(const FileName fileName, String description, const Threads *threa
 
     double totalTimeOfThreads = 0.0;
     for (int i = 0; i < NUMBER_OF_THREADS; i++){
-        fprintf(arquivo, SHOW_TID, threads[0][i].tid, threads[0][i].time);
-        totalTimeOfThreads += threads[0][i].time;
+        fprintf(arquivo, SHOW_TID, threads[i].tid, threads[i].time);
+        totalTimeOfThreads += threads[i].time;
     }
     fprintf(arquivo, SHOW_TOTAL_TIME_THREAD, totalTimeOfThreads);    
     fclose(arquivo);
@@ -165,7 +165,7 @@ double calculationOfNumberPi(unsigned int terms){
     snprintf(fileName, STRING_DEFAULT_SIZE, FILE_NAME_PROCESS, terms);
     String description;
     snprintf(description, STRING_DEFAULT_SIZE, FILE_DESCRIPTION, terms); 
-    createFile(fileName, description, &threads);
+    createFile(fileName, description, threads);
     return pi * 4;
 }//calculationOfNumberPi();
 

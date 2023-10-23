@@ -118,7 +118,7 @@ int createReport(const Report *report);
 /* Cria o arquivo texto no diretório atual usando o nome do arquivo, a descrição e os dados do vetor do tipo Threads.
  * Retorna TRUE se o arquivo foi criado com sucesso ou FALSE se ocorreu algum erro.
  */
-int createFile(const FileName fileName, String description, const Threads *threads);
+int createFile(const FileName fileName, String description, const Threads threads);
 
 /* Cria uma thread para fazer a soma parcial de n termos da série de Leibniz. 
    Esta função deve usar a função sumPartial para definir qual a função a ser executada por cada uma das x threads 
