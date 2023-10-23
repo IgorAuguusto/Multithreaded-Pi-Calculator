@@ -321,11 +321,11 @@ void process() {
         close(pipe_fd[PIPE_READ]); 
         processChild(PROCESS_ONE, pipe_fd, &report); 
     }
-    if (process2 == 0 && process1 != 0) {
+    else if (process2 == 0 && process1 != 0) {
         close(pipe_fd[PIPE_WRITER]); 
         processChild(PROCESS_TWO, pipe_fd, &report); 
     }
-    else if (process1 != 0 && process2 != 0) {
+    else {
         close(pipe_fd[PIPE_READ]);
         close(pipe_fd[PIPE_WRITER]);
         exit(EXIT_SUCCESS);
