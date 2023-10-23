@@ -6,7 +6,7 @@
 #define TRUE 1
 #define FALSE 0
 
-// Acesso pipe
+// Acesso ao pipe
 #define PIPE_READ 0
 #define PIPE_WRITER 1
 
@@ -33,6 +33,36 @@
 
 // Número parcial de termos da série de Leibniz.
 #define PARTIAL_NUMBER_OF_TERMS 125000000 
+
+// Formato do tempo
+#define TIME_FORMAT "%H:%M:%S"
+
+// Constantes definidas para preencher a estrutura report do processo pai. 
+#define REPORT_PROGRAM_NAME "Cálculo do Número π"
+#define REPORT_MESSAGE1 "Criando os processos filhos pi1 e pi2..."
+#define REPORT_MESSAGE2 "Processo pai (PID %d) finalizou sua execução."
+
+// Constantes definidas para preencher a estrutura PocessReport dos processos filhos. 
+#define PROCESS_REPORT_IDENTIFICATION  "- Processo Filho: pi%d (PID %d)"
+#define PROCESS_REPORT_NUMBER_OF_THREADS "No de threads: %d"
+#define PROCESS_REPORT_START "Início: %s" 
+#define PROCESS_REPORT_END "Fim: %s"
+#define PROCESS_REPORT_DURATION "Duração: %.2f s"
+#define PROCESS_REPORT_PI "Pi = %.9f"
+
+// Mensagens de erros.
+#define ERROR_PIPE "\nErro ao criar o pipe\n\n"
+#define ERROR_PROCESS "\nERRO: o processo filho não foi criado.\n\n"
+#define ERROR_FILE "\nNão foi possível abrir o arquivo.\n\n"
+#define ERROR_MALLOC "\nErro na alocação de memória\n\n"
+
+// Formatações de escrita em arquivo para o createFile.
+#define FILE_NAME_PROCESS "pi%d.txt"
+#define FILE_DESCRIPTION "Tempo em segundos das 16 threads do processo filho pi%d"
+#define SHOW_FILE_NAME "Arquivo: %s\n"
+#define SHOW_FILE_DESCRIPTION "Descrição: %s\n\n"
+#define SHOW_TID "TID %d: %.2f\n"
+#define SHOW_TOTAL_TIME_THREAD "\nTotal: %.2f\n"
 
 // Define uma string de tamanho padrão T, onde T é igual STRING_DEFAULT_SIZE.
 typedef char String[STRING_DEFAULT_SIZE];
@@ -70,6 +100,7 @@ typedef struct  {
    double time; 
 } Thread;
 
+// Representa o resultado obtido por sumPartional
 typedef struct {
    Thread thread;
    double sumPartional;
@@ -121,10 +152,87 @@ double calculationOfNumberPi(unsigned int terms);
  */
 int pi();
 
+/* A função 'process' é responsável por coordenar a execução de múltiplos processos e a criação de um pipe para comunicação entre eles.
+   Ela segue a lógica de criação de dois processos filho, onde cada filho executa uma função específica, enquanto o processo pai coordena a execução.
 
+   - Cria uma estrutura 'Report' para armazenar informações.
+   - Chama 'fillReportProcessFather' para preencher a estrutura 'Report'.
+   - Cria um pipe usando 'createPipe' para permitir a comunicação entre os processos filhos.
+   - Cria dois processos filhos usando 'createProcess'.
+   - No primeiro filho, fecha o descritor de leitura do pipe e executa 'processChild' com a identificação 'PROCESS_ONE' e a estrutura 'Report'.
+   - No segundo filho, fecha o descritor de escrita do pipe e executa 'processChild' com a identificação 'PROCESS_TWO' e a estrutura 'Report'.
+   - No processo pai, fecha ambos os descritores do pipe e sai com EXIT_SUCCESS.
 
-pid_t createProcess();
-
+   Essa função é parte de um programa que envolve múltiplos processos e comunicação entre eles.
+*/
 void process();
 
+/* A função 'fillReportProcessFather' é responsável por preencher a estrutura 'Report' com informações específicas,
+   como o nome do programa, mensagens e o PID do processo atual.
+
+   Parâmetros:
+   - report: Ponteiro para a estrutura 'Report' a ser preenchida.
+
+   Essa função é utilizada para inicializar a estrutura 'Report' com informações relevantes antes de usá-la em outras partes do programa.
+*/
+void fillReportProcessFather(Report* report);
+
+
+/* A função 'createProcess' é responsável por criar um novo processo filho utilizando a função 'fork'.
+   Ela cria um novo processo, que é uma cópia do processo pai, e retorna o PID (identificador de processo) do processo filho.
+
+   A função também lida com erros na criação do processo, imprimindo uma mensagem de erro e encerrando o programa em caso de falha.
+   Retorna:
+   - O PID do processo filho criado.
+*/
+pid_t createProcess();
+
+
+/* A função 'createPipe' é responsável por criar um pipe (tubo de comunicação) utilizando a função 'pipe'.
+   O pipe permite a comunicação entre processos, fornecendo um meio de transferência de dados entre eles.
+
+   Parâmetros:
+   - pipe_fd: Array de inteiros de tamanho 2 para armazenar os descritores de arquivo do pipe.
+
+   A função utiliza a função 'pipe' para criar o pipe e atribui os descritores de arquivo resultantes ao array 'pipe_fd'.
+   Em caso de falha na criação do pipe, a função imprime uma mensagem de erro e encerra o programa com falha.
+*/
+int createPipe(int pipe_fd[2]);
+
+/* A função 'processChild' é responsável por realizar tarefas específicas em um processo filho, identificado pelo parâmetro 'numberProcess'.
+   Ela realiza o cálculo do valor de π e preenche um relatório de processo.
+
+   Parâmetros:
+   - numberProcess: Um valor que identifica o processo (PROCESS_ONE ou PROCESS_TWO).
+   - pipe_fd: Um array de inteiros que representa o pipe para comunicação.
+   - report: Ponteiro para a estrutura 'Report' que armazena informações do processo.
+
+   A função calcula o valor de π usando 'calculationOfNumberPi' e mede o tempo de execução.
+   Em seguida, preenche um relatório de processo 'ProcessReport' com os resultados e as informações de tempo.
+
+*/
 void processChild(int numberProcess, int pipe_fd[2], Report* report);
+
+/* A função 'fillProcessReportSun' é responsável por preencher uma estrutura 'ProcessReport' com informações específicas
+   sobre a execução de um processo filho, incluindo seu número, tempo de início, tempo de término, duração e valor de π calculado.
+
+   Parâmetros:
+   - processReport: Ponteiro para a estrutura 'ProcessReport' a ser preenchida.
+   - numberProcess: Número do processo (PROCESS_ONE ou PROCESS_TWO).
+   - startTimeStr: String formatada representando o tempo de início.
+   - endTimeStr: String formatada representando o tempo de término.
+   - duration: Tempo de execução em segundos.
+   - pi: Valor de π.
+
+   Essa função é parte do processo de criação de relatórios para monitorar o desempenho do programa.
+*/
+void fillProcessReportSun(ProcessReport* processReport, int numberProcess, char* startTimeStr, char* endTimeStr, double duration, double pi);
+
+/* A função 'fillThreadTidAndTime' é responsável por preencher uma estrutura de thread 'Thread' com o ID da thread (TID) e o tempo de execução,
+   obtidos a partir da estrutura 'ThreadResult'.
+
+   Parâmetros:
+   - threadResult: A estrutura 'ThreadResult' que contém o TID e o tempo de execução.
+   - thread: Ponteiro para a estrutura 'Thread' a ser preenchida.
+*/
+void fillThreadTidAndTime(ThreadResult threadResult, Thread* thread);
