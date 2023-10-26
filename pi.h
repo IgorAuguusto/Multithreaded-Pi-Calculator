@@ -38,6 +38,11 @@
 // Formato do tempo
 #define TIME_FORMAT "%H:%M:%S"
 
+//Formatações
+#define NEW_LINE '\n'
+#define EMPTY_LINE "\n\n"
+#define TAB '\t'
+
 // Constantes definidas para preencher a estrutura report do processo pai. 
 #define REPORT_PROGRAM_NAME "Cálculo do Número π"
 #define REPORT_MESSAGE1 "Criando os processos filhos pi1 e pi2..."
@@ -52,18 +57,18 @@
 #define PROCESS_REPORT_PI "Pi = %.9f"
 
 // Mensagens de erros.
-#define ERROR_PIPE "\nErro ao criar o pipe\n\n"
-#define ERROR_PROCESS "\nERRO: o processo filho não foi criado.\n\n"
-#define ERROR_FILE "\nNão foi possível abrir o arquivo.\n\n"
-#define ERROR_MALLOC "\nErro na alocação de memória\n\n"
+#define ERROR_PIPE "Erro ao criar o pipe"
+#define ERROR_PROCESS "ERRO: o processo filho não foi criado."
+#define ERROR_FILE "Não foi possível abrir o arquivo."
+#define ERROR_MALLOC "Erro na alocação de memória"
 
 // Formatações de escrita em arquivo para o createFile.
 #define FILE_NAME_PROCESS "pi%d.txt"
-#define FILE_DESCRIPTION "Tempo em segundos das 16 threads do processo filho pi%d"
-#define SHOW_FILE_NAME "Arquivo: %s\n"
-#define SHOW_FILE_DESCRIPTION "Descrição: %s\n\n"
-#define SHOW_TID "TID %d: %.2f\n"
-#define SHOW_TOTAL_TIME_THREAD "\nTotal: %.2f\n"
+#define FILE_DESCRIPTION "Tempo em segundos das 16 threads do processo filho pi%d."
+#define SHOW_FILE_NAME "Arquivo: %s%c"
+#define SHOW_FILE_DESCRIPTION "Descrição: %s%s"
+#define SHOW_TID "TID %d: %.2f%c"
+#define SHOW_TOTAL_TIME_THREAD "%cTotal: %.2f s%c"
 
 // Define uma string de tamanho padrão T, onde T é igual STRING_DEFAULT_SIZE.
 typedef char String[STRING_DEFAULT_SIZE];

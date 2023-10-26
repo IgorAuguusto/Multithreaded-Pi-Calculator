@@ -20,23 +20,23 @@ int createReport(const Report *report) {
         return FALSE;
     }
 
-    printf("\n\n%s\n", report->programName);
-    printf("\n%s\n", report->message1);
-    printf("%s\n", report->message2);
+    printf("%s%s%s", EMPTY_LINE, report->programName, EMPTY_LINE);
+    printf("%s%c", report->message1, NEW_LINE);
+    printf("%s%c", report->message2, NEW_LINE);
 
-    printf("\n%s\n\n", report->processReport1.identification);
-    printf("\t%s\n\n", report->processReport1.numberOfThreads);
-    printf("\t%s\n", report->processReport1.start);
-    printf("\t%s\n", report->processReport1.end);
-    printf("\t%s", report->processReport1.duration);
-    printf("\n\n\t%s\n", report->processReport1.pi);
+    printf("%c%s%s", NEW_LINE, report->processReport1.identification, EMPTY_LINE);
+    printf("%c%s%s", TAB, report->processReport1.numberOfThreads, EMPTY_LINE);
+    printf("%c%s%c", TAB, report->processReport1.start, NEW_LINE);
+    printf("%c%s%c", TAB, report->processReport1.end, NEW_LINE);
+    printf("%c%s%s", TAB, report->processReport1.duration, EMPTY_LINE);
+    printf("%c%s%s", TAB, report->processReport1.pi, EMPTY_LINE);
 
-    printf("\n%s\n\n", report->processReport2.identification);
-    printf("\t%s\n\n", report->processReport2.numberOfThreads);
-    printf("\t%s\n", report->processReport2.start);
-    printf("\t%s\n", report->processReport2.end);
-    printf("\t%s", report->processReport2.duration);
-    printf("\n\n\t%s\n\n", report->processReport2.pi);
+    printf("%s%s", report->processReport2.identification, EMPTY_LINE);
+    printf("%c%s%s", TAB, report->processReport2.numberOfThreads, EMPTY_LINE);
+    printf("%c%s%c", TAB, report->processReport2.start, NEW_LINE);
+    printf("%c%s%c", TAB, report->processReport2.end, NEW_LINE);
+    printf("%c%s%s", TAB, report->processReport2.duration, EMPTY_LINE);
+    printf("%c%s%s", TAB, report->processReport2.pi, EMPTY_LINE);
 
     return TRUE;
 }//createReport();
@@ -54,15 +54,15 @@ int createFile(const FileName fileName, String description, const Threads thread
         return FALSE;
     }
 
-    fprintf(arquivo, SHOW_FILE_NAME, fileName);
-    fprintf(arquivo, SHOW_FILE_DESCRIPTION, description);
+    fprintf(arquivo, SHOW_FILE_NAME, fileName, NEW_LINE);
+    fprintf(arquivo, SHOW_FILE_DESCRIPTION, description, EMPTY_LINE);
 
     double totalTimeOfThreads = 0.0;
     for (int i = 0; i < NUMBER_OF_THREADS; i++){
-        fprintf(arquivo, SHOW_TID, threads[i].tid, threads[i].time);
+        fprintf(arquivo, SHOW_TID, threads[i].tid, threads[i].time, NEW_LINE);
         totalTimeOfThreads += threads[i].time;
     }
-    fprintf(arquivo, SHOW_TOTAL_TIME_THREAD, totalTimeOfThreads);    
+    fprintf(arquivo, SHOW_TOTAL_TIME_THREAD, NEW_LINE, totalTimeOfThreads, NEW_LINE);    
     fclose(arquivo);
 
     return TRUE;
