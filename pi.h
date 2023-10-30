@@ -35,6 +35,9 @@
 // Número parcial de termos da série de Leibniz.
 #define PARTIAL_NUMBER_OF_TERMS 125000000 
 
+// Região 
+#define LOCALE "pt_BR.utf8"
+
 // Formato do tempo
 #define TIME_FORMAT "%H:%M:%S"
 
@@ -61,6 +64,9 @@
 #define ERROR_PROCESS "ERRO: o processo filho não foi criado."
 #define ERROR_FILE "Não foi possível abrir o arquivo."
 #define ERROR_MALLOC "Erro na alocação de memória"
+
+// Opção de abertura do arquivo.
+#define FILE_OPENING_OPTION "w"
 
 // Formatações de escrita em arquivo para o createFile.
 #define FILE_NAME_PROCESS "pi%d.txt"
@@ -238,3 +244,11 @@ void fillProcessReportSun(ProcessReport* processReport, int numberProcess, char*
    - thread: Ponteiro para a estrutura 'Thread' a ser preenchida.
 */
 void fillThreadTidAndTime(ThreadResult threadResult, Thread* thread);
+
+/* A função 'calculateDuration' calcula a diferença de tempo entre duas estruturas 'struct timeval' e retorna a duração em segundos, incluindo a parte decimal representando milissegundos.
+
+   Parâmetros:
+   - startTime: Estrutura 'struct timeval' representando o tempo de início.
+   - endTime: Estrutura 'struct timeval' representando o tempo de término.
+*/
+double calculateDuration(struct timeval startTime, struct timeval endTime);

@@ -47,7 +47,7 @@ int createReport(const Report *report) {
 int createFile(const FileName fileName, String description, const Threads threads){
     
     FILE *arquivo;
-    arquivo = fopen(fileName, "w");
+    arquivo = fopen(fileName, FILE_OPENING_OPTION);
 
     if (arquivo == NULL) {
         perror(ERROR_FILE);
@@ -97,12 +97,8 @@ void* sumPartial(void *terms) {
     }
     
     gettimeofday(&endTime, NULL);
-    time_t startTimeSeconds = startTime.tv_sec;
-    time_t endTimeSeconds = endTime.tv_sec;
-    double seconds = (double)(endTime.tv_sec - startTime.tv_sec);
-    double milliseconds = (double)(endTime.tv_usec - startTime.tv_usec) / 1000.0;
     threadResult->thread.tid = syscall(SYS_gettid); 
-    threadResult->thread.time = seconds + (milliseconds / 1000.0);
+    threadResult->thread.time = calculateDuration(startTime, endTime);
     
     // Liberando a região de memoria do argumento.
     free(terms);
@@ -166,7 +162,7 @@ double calculationOfNumberPi(unsigned int terms){
     String description;
     snprintf(description, STRING_DEFAULT_SIZE, FILE_DESCRIPTION, terms); 
     createFile(fileName, description, threads);
-    return pi * 4;
+    return pi * 4.0;
 }//calculationOfNumberPi();
 
 /* A função 'fillProcessReportSun' é responsável por preencher uma estrutura 'ProcessReport' com informações específicas
@@ -189,6 +185,18 @@ void fillProcessReportSun(ProcessReport* processReport, int numberProcess, char*
     snprintf(processReport->pi, STRING_DEFAULT_SIZE, PROCESS_REPORT_PI, pi);
 }//fillProcessReportSun()
 
+/* A função 'calculateDuration' calcula a diferença de tempo entre duas estruturas 'struct timeval' e retorna a duração em segundos, incluindo a parte decimal representando milissegundos.
+
+   Parâmetros:
+   - startTime: Estrutura 'struct timeval' representando o tempo de início.
+   - endTime: Estrutura 'struct timeval' representando o tempo de término.
+*/
+double calculateDuration(struct timeval startTime, struct timeval endTime){
+    double seconds = (double)(endTime.tv_sec - startTime.tv_sec);
+    double milliseconds = (double)(endTime.tv_usec - startTime.tv_usec) / 1000.0;
+    return  seconds + (milliseconds / 1000.0);
+}//calculateDuration()
+
 /* A função 'processChild' é responsável por realizar tarefas específicas em um processo filho, identificado pelo parâmetro 'numberProcess'.
    Ela realiza o cálculo do valor de π e preenche um relatório de processo.
 
@@ -210,9 +218,7 @@ void processChild(int numberProcess, int pipe_fd[2], Report* report) {
 
     gettimeofday(&endTime, NULL);
 
-    double seconds = (double)(endTime.tv_sec - startTime.tv_sec);
-    double milliseconds = (double)(endTime.tv_usec - startTime.tv_usec) / 1000.0;
-    double duration = seconds + (milliseconds / 1000.0);
+    double duration = calculateDuration(startTime, endTime);
 
     char startTimeStr[9];
     char endTimeStr[9];
@@ -337,7 +343,7 @@ void process() {
  * Retorna EXIT_SUCCESS.
  */
 int pi(){
-    setlocale(LC_ALL, "pt_BR.utf8");
+    setlocale(LC_ALL, LOCALE);
     process();
     return  EXIT_SUCCESS;
 }//pi()
