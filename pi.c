@@ -15,8 +15,7 @@ int createReport(const Report *report) {
     if (report == NULL) {
         return FALSE;
     }
-
-    if (report->processReport1.identification[0] == '\0' || report->processReport2.identification[0] == '\0') {
+    else if (report->processReport1.identification[0] == NULL_CHAR || report->processReport2.identification[0] == NULL_CHAR) {
         return FALSE;
     }
 
@@ -44,7 +43,7 @@ int createReport(const Report *report) {
 /* Cria o arquivo texto no diretório atual usando o nome do arquivo, a descrição e os dados do vetor do tipo Threads.
  * Retorna TRUE se o arquivo foi criado com sucesso ou FALSE se ocorreu algum erro.
  */
-int createFile(const FileName fileName, String description, const Threads threads){
+int createFile(const FileName fileName, String description, const Threads threads) {
     
     FILE *arquivo;
     arquivo = fopen(fileName, FILE_OPENING_OPTION);
@@ -58,11 +57,16 @@ int createFile(const FileName fileName, String description, const Threads thread
     fprintf(arquivo, SHOW_FILE_DESCRIPTION, description, EMPTY_LINE);
 
     double totalTimeOfThreads = 0.0;
+    String formattedString;
     for (int i = 0; i < NUMBER_OF_THREADS; i++){
-        fprintf(arquivo, SHOW_TID, threads[i].tid, threads[i].time, NEW_LINE);
+        sprintf(formattedString, SHOW_TID, threads[i].tid, threads[i].time, NEW_LINE);
+        replace(formattedString, DOT, COMMA);
+        fprintf(arquivo, "%s", formattedString);
         totalTimeOfThreads += threads[i].time;
     }
-    fprintf(arquivo, SHOW_TOTAL_TIME_THREAD, NEW_LINE, totalTimeOfThreads, NEW_LINE);    
+    sprintf(formattedString, SHOW_TOTAL_TIME_THREAD, NEW_LINE, totalTimeOfThreads, NEW_LINE);    
+    replace(formattedString, DOT, COMMA);
+    fprintf(arquivo, "%s", formattedString);
     fclose(arquivo);
 
     return TRUE;
@@ -91,7 +95,8 @@ void* sumPartial(void *terms) {
         double term = 1.0 / (2.0 * i + 1);
         if (i % 2 == 0) {
             threadResult->sumPartional += term;
-        } else {
+        } 
+        else {
             threadResult->sumPartional -= term;
         }
     }
@@ -240,12 +245,14 @@ void processChild(int numberProcess, int pipe_fd[2], Report* report) {
         close(pipe_fd[PIPE_WRITER]);
         exit(EXIT_SUCCESS);
 
-    } else if (numberProcess == PROCESS_TWO) {
+    } 
+    else if (numberProcess == PROCESS_TWO) {
         // Processo filho 2 (pi2)
         close(pipe_fd[PIPE_WRITER]); 
         read(pipe_fd[PIPE_READ], &report->processReport1, sizeof(ProcessReport));
         close(pipe_fd[PIPE_READ]);
         report->processReport2 = processReport;
+        replaceDotForComma(report);
         createReport(report);
         exit(EXIT_SUCCESS);
     }
@@ -286,6 +293,40 @@ int createPipe(int pipe_fd[2]) {
     }
     return TRUE;
 }//createPipe()
+
+/* A função 'replaceDotForComma' substitui todas as ocorrências do caractere ponto '.' pelo caractere vírgula ',' 
+   em várias partes da estrutura 'Report' que contém informações sobre processos.
+
+   Parâmetros:
+   - report: Um ponteiro para a estrutura 'Report' que contém informações a serem processadas.
+
+   A função utiliza a função 'replace' para realizar a substituição do ponto '.' pelo caractere vírgula ',' 
+   nas strings de duração e PI em duas 'ProcessReport' dentro da estrutura 'Report'.
+*/
+void replaceDotForComma(Report* report){
+    replace(report->processReport1.duration, DOT, COMMA);
+    replace(report->processReport1.pi, DOT, COMMA);
+    replace(report->processReport2.duration, DOT, COMMA);
+    replace(report->processReport2.pi, DOT, COMMA);
+}
+
+
+/* A função 'replace' substitui todas as ocorrências do caractere 'replaced' pelo caractere 'replacer' em uma string.
+
+   Parâmetros:
+   - string: A string na qual as substituições serão feitas.
+   - replaced: O caractere que será substituído por 'replacer'.
+   - replacer: O caractere que substituirá 'replaced'.
+
+   A função itera através da string e, para cada caractere igual a 'replaced', substitui-o por 'replacer'.
+*/
+void replace(String string, char replaced, char replacer){
+    for(unsigned i = 0; string[i] != NULL_CHAR; i++){
+        if(string[i] == replaced){
+            string[i] = replacer;
+        }
+    }
+}//replace()
 
 /* A função 'fillReportProcessFather' é responsável por preencher a estrutura 'Report' com informações específicas,
    como o nome do programa, mensagens e o PID do processo atual.

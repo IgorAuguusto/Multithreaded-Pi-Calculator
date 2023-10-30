@@ -41,10 +41,15 @@
 // Formato do tempo
 #define TIME_FORMAT "%H:%M:%S"
 
+// Representa um caractere nulo.
+#define NULL_CHAR '\0'
+
 //Formatações
 #define NEW_LINE '\n'
 #define EMPTY_LINE "\n\n"
 #define TAB '\t'
+#define DOT '.'
+#define COMMA ','
 
 // Constantes definidas para preencher a estrutura report do processo pai. 
 #define REPORT_PROGRAM_NAME "Cálculo do Número π"
@@ -56,8 +61,8 @@
 #define PROCESS_REPORT_NUMBER_OF_THREADS "Nº de threads: %d"
 #define PROCESS_REPORT_START "Início: %s" 
 #define PROCESS_REPORT_END "Fim: %s"
-#define PROCESS_REPORT_DURATION "Duração: %.2f s"
-#define PROCESS_REPORT_PI "Pi = %.9f"
+#define PROCESS_REPORT_DURATION "Duração: %.2lf s"
+#define PROCESS_REPORT_PI "Pi = %.9lf"
 
 // Mensagens de erros.
 #define ERROR_PIPE "Erro ao criar o pipe"
@@ -73,8 +78,8 @@
 #define FILE_DESCRIPTION "Tempo em segundos das 16 threads do processo filho pi%d."
 #define SHOW_FILE_NAME "Arquivo: %s%c"
 #define SHOW_FILE_DESCRIPTION "Descrição: %s%s"
-#define SHOW_TID "TID %d: %.2f%c"
-#define SHOW_TOTAL_TIME_THREAD "%cTotal: %.2f s%c"
+#define SHOW_TID "TID %d: %.2lf%c"
+#define SHOW_TOTAL_TIME_THREAD "%cTotal: %.2lf s%c"
 
 // Define uma string de tamanho padrão T, onde T é igual STRING_DEFAULT_SIZE.
 typedef char String[STRING_DEFAULT_SIZE];
@@ -244,6 +249,28 @@ void fillProcessReportSun(ProcessReport* processReport, int numberProcess, char*
    - thread: Ponteiro para a estrutura 'Thread' a ser preenchida.
 */
 void fillThreadTidAndTime(ThreadResult threadResult, Thread* thread);
+
+/* A função 'replace' substitui todas as ocorrências do caractere 'replaced' pelo caractere 'replacer' em uma string.
+
+   Parâmetros:
+   - string: A string na qual as substituições serão feitas.
+   - replacer: O caractere que substituirá 'replaced'.
+   - replaced: O caractere que será substituído por 'replacer'.
+
+   A função itera através da string e, para cada caractere igual a 'replaced', substitui-o por 'replacer'.
+*/
+void replace(String string, char replacer, char replaced);
+
+/* A função 'replaceDotForComma' substitui todas as ocorrências do caractere ponto '.' pelo caractere vírgula ',' 
+   em várias partes da estrutura 'Report' que contém informações sobre processos.
+
+   Parâmetros:
+   - report: Um ponteiro para a estrutura 'Report' que contém informações a serem processadas.
+
+   A função utiliza a função 'replace' para realizar a substituição do ponto '.' pelo caractere vírgula ',' 
+   nas strings de duração e PI em duas 'ProcessReport' dentro da estrutura 'Report'.
+*/
+void replaceDotForComma(Report* report);
 
 /* A função 'calculateDuration' calcula a diferença de tempo entre duas estruturas 'struct timeval' e retorna a duração em segundos, incluindo a parte decimal representando milissegundos.
 
